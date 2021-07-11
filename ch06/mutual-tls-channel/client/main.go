@@ -1,7 +1,15 @@
+// Go to ${grpc-up-and-running}/samples/ch02/productinfo
+// Optional: Execute protoc -I proto proto/product_info.proto --go_out=plugins=grpc:go/product_info
+// Execute go get -v github.com/grpc-up-and-running/samples/ch02/productinfo/golang/product_info
+// Execute go run go/client/main.go
+
 package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"io/ioutil"
 	"log"
 	"time"
 
@@ -14,16 +22,33 @@ import (
 const (
 	address  = "localhost:50051"
 	hostname = "localhost.modusign.co.kr"
-	crtFile  = "cert/server.crt"
+	crtFile  = "cert/client.crt"
+	keyFile  = "cert/client.key"
+	caFile   = "cert/ca.crt"
 )
 
 func main() {
-	creds, err := credentials.NewClientTLSFromFile(crtFile, hostname)
+	certificate, err := tls.LoadX509KeyPair(crtFile, keyFile)
 	if err != nil {
-		log.Fatalf("failed to load credentials: %v", err)
+		log.Fatalf("could not load client key pair: %s", err)
 	}
+
+	certPool := x509.NewCertPool()
+	ca, err := ioutil.ReadFile(caFile)
+	if err != nil {
+		log.Fatalf("could not read ca certificate: %s", err)
+	}
+
+	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+		log.Fatalf("failed to append ca certs")
+	}
+
 	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(creds),
+		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+			ServerName:   hostname,
+			Certificates: []tls.Certificate{certificate},
+			RootCAs:      certPool,
+		})),
 	}
 
 	conn, err := grpc.Dial(address, opts...)
