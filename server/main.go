@@ -2,19 +2,23 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"log"
 	"net"
 
 	"github.com/gofrs/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/status"
 
 	pb "productinfo/ecommerce"
 )
 
 const (
-	port = ":50051"
+	port    = ":50051"
+	crtFile = "cert/server.crt"
+	keyFile = "cert/server.key"
 )
 
 // server is used to implement ecommerce/product_info.
@@ -56,12 +60,23 @@ func (s *server) GetProduct(ctx context.Context, in *pb.ProductID) (*pb.Product,
 }
 
 func main() {
+	cert, err := tls.LoadX509KeyPair(crtFile, keyFile)
+	if err != nil {
+		log.Fatalf("failed to load Key pair: %s", err)
+	}
+	opts := []grpc.ServerOption{
+		grpc.Creds(credentials.NewServerTLSFromCert(&cert)),
+	}
+
+	s := grpc.NewServer(opts...)
+
+	pb.RegisterProductInfoServer(s, &server{})
+
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	s := grpc.NewServer()
-	pb.RegisterProductInfoServer(s, &server{})
+
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}

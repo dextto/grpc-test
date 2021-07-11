@@ -13,15 +13,25 @@ import (
 	pb "productinfo/ecommerce"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 const (
-	address = "localhost:50051"
+	address  = "localhost:50051"
+	hostname = "localhost"
+	crtFile  = "cert/server.crt"
 )
 
 func main() {
-	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
+	creds, err := credentials.NewClientTLSFromFile(crtFile, hostname)
+	if err != nil {
+		log.Fatalf("failed to load credentials: %v", err)
+	}
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(creds),
+	}
+
+	conn, err := grpc.Dial(address, opts...)
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
