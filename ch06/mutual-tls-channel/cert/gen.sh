@@ -1,5 +1,3 @@
-rm *.pem
-
 # 1. Generate CA's private key and self-signed certificate
 openssl req -x509 -newkey rsa:4096 -days 365 -nodes -keyout ca.key -out ca.crt -subj "/C=KR/ST=Busan/L=Haeundae/O=TEST CA/OU=Education/CN=*.testca.com/emailAddress=testca@gmail.com"
 
