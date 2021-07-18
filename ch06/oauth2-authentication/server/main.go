@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/tls"
-	"encoding/base64"
 	"log"
 	"net"
 	"strings"
@@ -74,7 +73,7 @@ func main() {
 	}
 	opts := []grpc.ServerOption{
 		grpc.Creds(credentials.NewServerTLSFromCert(&cert)),
-		grpc.UnaryInterceptor(ensureValidBasicCredentials), // 1. 인터셉터 설정. steam은 StreamInterceptor
+		grpc.UnaryInterceptor(ensureValidToken), // 1. 인터셉터 설정. steam은 StreamInterceptor
 	}
 
 	s := grpc.NewServer(opts...)
@@ -95,17 +94,17 @@ func valid(authorization []string) bool {
 	if len(authorization) < 1 {
 		return false
 	}
-	token := strings.TrimPrefix(authorization[0], "Basic ")
-	return token == base64.StdEncoding.EncodeToString([]byte("admin:admin"))
+	token := strings.TrimPrefix(authorization[0], "Bearer ") // 3. Bearer 방식으로 변경
+	return token == "some-secret-token"
 }
 
-func ensureValidBasicCredentials(
+func ensureValidToken(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler,
 ) (interface{}, error) {
-	md, ok := metadata.FromIncomingContext(ctx) // 2. 메타데이터 추출
+	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, errMissingMetadata
 	}
