@@ -13,17 +13,17 @@ import (
 
 const (
 	address  = "localhost:50051"
-	hostname = "localhost.modusign.co.kr"
-	crtFile  = "cert/server.crt"
+	hostname = "localhost.modusign.co.kr" // 공개키가 허용하는 CN(Common Name)
+	crtFile  = "cert/server.crt"          // server's self-signed public key (certificate)
 )
 
 func main() {
-	creds, err := credentials.NewClientTLSFromFile(crtFile, hostname)
+	creds, err := credentials.NewClientTLSFromFile(crtFile, hostname) // 1. 서버의 공개키로 인증서 생성(??)
 	if err != nil {
 		log.Fatalf("failed to load credentials: %v", err)
 	}
 	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(creds),
+		grpc.WithTransportCredentials(creds), // 2. TLS 연결 설정
 	}
 
 	conn, err := grpc.Dial(address, opts...)

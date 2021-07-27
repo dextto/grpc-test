@@ -17,8 +17,8 @@ import (
 
 const (
 	port    = ":50051"
-	crtFile = "cert/server.crt"
-	keyFile = "cert/server.key"
+	crtFile = "cert/server.crt" // server's self-signed public key (certificate)
+	keyFile = "cert/server.key" // server's private key
 )
 
 // server is used to implement ecommerce/product_info.
@@ -60,12 +60,12 @@ func (s *server) GetProduct(ctx context.Context, in *pb.ProductID) (*pb.Product,
 }
 
 func main() {
-	cert, err := tls.LoadX509KeyPair(crtFile, keyFile)
+	cert, err := tls.LoadX509KeyPair(crtFile, keyFile) // 1. 공개키/개인키로 인증서를 생성한다
 	if err != nil {
 		log.Fatalf("failed to load Key pair: %s", err)
 	}
 	opts := []grpc.ServerOption{
-		grpc.Creds(credentials.NewServerTLSFromCert(&cert)),
+		grpc.Creds(credentials.NewServerTLSFromCert(&cert)), // 2. TLS 활성화
 	}
 
 	s := grpc.NewServer(opts...)

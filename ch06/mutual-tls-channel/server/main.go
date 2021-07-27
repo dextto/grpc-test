@@ -21,7 +21,7 @@ const (
 	port    = ":50051"
 	crtFile = "cert/server.crt"
 	keyFile = "cert/server.key"
-	caFile  = "cert/ca.crt"
+	caFile  = "cert/ca.crt" // CA의 공개키(인증서)
 )
 
 // server is used to implement ecommerce/product_info.
@@ -63,24 +63,24 @@ func (s *server) GetProduct(ctx context.Context, in *pb.ProductID) (*pb.Product,
 }
 
 func main() {
-	certificate, err := tls.LoadX509KeyPair(crtFile, keyFile)
+	certificate, err := tls.LoadX509KeyPair(crtFile, keyFile) // 1. 인증서 생성
 	if err != nil {
 		log.Fatalf("failed to load Key pair: %s", err)
 	}
 
-	certPool := x509.NewCertPool()
+	certPool := x509.NewCertPool() // 2. 인증서 풀 생성
 	ca, err := ioutil.ReadFile(caFile)
 	if err != nil {
 		log.Fatalf("could not read ca certification: %s", err)
 	}
 
-	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+	if ok := certPool.AppendCertsFromPEM(ca); !ok { // 3. ca 공개키(인증서)를 인증서 풀에 등록
 		log.Fatalf("failed to append ca certification")
 	}
 
 	opts := []grpc.ServerOption{
 		grpc.Creds(
-			credentials.NewTLS(&tls.Config{
+			credentials.NewTLS(&tls.Config{ // 4. TLS 활성화
 				ClientAuth:   tls.RequireAndVerifyClientCert,
 				Certificates: []tls.Certificate{certificate},
 				ClientCAs:    certPool,

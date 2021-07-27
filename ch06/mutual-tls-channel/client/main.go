@@ -24,28 +24,28 @@ const (
 	hostname = "localhost.modusign.co.kr"
 	crtFile  = "cert/client.crt"
 	keyFile  = "cert/client.key"
-	caFile   = "cert/ca.crt"
+	caFile   = "cert/ca.crt" // CA의 공개키(인증서)
 )
 
 func main() {
-	certificate, err := tls.LoadX509KeyPair(crtFile, keyFile)
+	certificate, err := tls.LoadX509KeyPair(crtFile, keyFile) // 1. 인증서 생성
 	if err != nil {
 		log.Fatalf("could not load client key pair: %s", err)
 	}
 
-	certPool := x509.NewCertPool()
+	certPool := x509.NewCertPool() // 2. 인증서 풀 생성
 	ca, err := ioutil.ReadFile(caFile)
 	if err != nil {
 		log.Fatalf("could not read ca certificate: %s", err)
 	}
 
-	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+	if ok := certPool.AppendCertsFromPEM(ca); !ok { // 3. ca 공개키(인증서)를 인증서 풀에 등록
 		log.Fatalf("failed to append ca certs")
 	}
 
 	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-			ServerName:   hostname,
+		grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{ // 4. TLS 활성화
+			ServerName:   hostname, // 서버 인증서의 CN(Common Name)
 			Certificates: []tls.Certificate{certificate},
 			RootCAs:      certPool,
 		})),
